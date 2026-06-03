@@ -346,10 +346,14 @@ class LoginDialog(QDialog):
         else:
             QMessageBox.warning(self, "Error", "Invalid username or password")
 
+
+
+# Replace the ReceiptPrinter class with this corrected version
+
 class ReceiptPrinter:
     @staticmethod
     def generate_html_receipt(sale_data, company_data, cart_items, sale_type):
-        """Generate beautiful HTML receipt"""
+        """Generate beautiful HTML receipt with very large fonts and logo"""
         
         # Calculate VAT exclusive prices if sale_type is invoice
         if sale_type == "invoice":
@@ -358,6 +362,31 @@ class ReceiptPrinter:
                 item['price_excl_vat'] = item['price'] / (1 + vat_rate/100)
                 item['vat_amount'] = item['price'] - item['price_excl_vat']
         
+        # Handle logo - embed as base64
+        logo_html = ""
+        logo_path = company_data.get('logo_path', '')
+        if logo_path and os.path.exists(logo_path):
+            try:
+                import base64
+                with open(logo_path, 'rb') as img_file:
+                    img_data = base64.b64encode(img_file.read()).decode()
+                
+                # Determine image type
+                ext = os.path.splitext(logo_path)[1].lower()
+                mime_type = {
+                    '.png': 'image/png',
+                    '.jpg': 'image/jpeg',
+                    '.jpeg': 'image/jpeg',
+                    '.bmp': 'image/bmp',
+                    '.gif': 'image/gif'
+                }.get(ext, 'image/png')
+                
+                logo_html = f'<img src="data:{mime_type};base64,{img_data}" style="max-width: 200px; max-height: 100px; margin-bottom: 10px;" alt="Logo">'
+                print(f"Logo loaded successfully from: {logo_path}")  # Debug
+            except Exception as e:
+                print(f"Error loading logo: {e}")
+        
+        # SUPER LARGE FONTS - designed for thermal printers
         html = f"""
         <!DOCTYPE html>
         <html>
@@ -365,193 +394,243 @@ class ReceiptPrinter:
             <meta charset="UTF-8">
             <title>{'INVOICE' if sale_type == 'invoice' else 'PROFORMA' if sale_type == 'proforma' else 'CONSIGNMENT NOTE'}</title>
             <style>
+                * {{
+                    margin: 0;
+                    padding: 0;
+                    box-sizing: border-box;
+                }}
                 @page {{
-                    size: 80mm 297mm;
-                    margin: 5mm;
+                    size: 80mm auto;
+                    margin: 3mm;
                 }}
                 body {{
-                    font-family: 'Helvetica', Arial, sans-serif;
-                    font-size: 10px;
+                    font-family: 'Helvetica', 'Arial', sans-serif;
+                    font-size: 20px;
+                    line-height: 1.4;
                     margin: 0;
-                    padding: 5px;
+                    padding: 8px;
                     background: white;
+                    width: 100%;
+                }}
+                .container {{
+                    width: 100%;
+                    max-width: 100%;
                 }}
                 .header {{
                     text-align: center;
-                    margin-bottom: 10px;
-                    padding-bottom: 10px;
-                    border-bottom: 2px solid #FF69B4;
+                    margin-bottom: 20px;
+                    padding-bottom: 15px;
+                    border-bottom: 4px solid #FF69B4;
                 }}
                 .company-name {{
-                    font-size: 18px;
+                    font-size: 32px;
                     font-weight: bold;
                     color: #FF1493;
-                    margin-bottom: 5px;
+                    margin: 15px 0 10px 0;
                 }}
                 .company-details {{
-                    font-size: 9px;
-                    color: #666;
-                    line-height: 1.3;
+                    font-size: 16px;
+                    color: #555;
+                    line-height: 1.6;
                 }}
                 .receipt-title {{
-                    font-size: 14px;
+                    font-size: 28px;
                     font-weight: bold;
                     text-align: center;
-                    margin: 10px 0;
-                    padding: 5px;
+                    margin: 20px 0;
+                    padding: 15px;
                     background: #FF69B4;
                     color: white;
+                    border-radius: 8px;
                 }}
                 .info-section {{
-                    margin: 10px 0;
-                    padding: 8px;
+                    margin: 20px 0;
+                    padding: 15px;
                     background: #F9F9F9;
-                    border-left: 3px solid #FF69B4;
+                    border-left: 6px solid #FF69B4;
+                    border-radius: 8px;
                 }}
                 .info-row {{
-                    margin: 3px 0;
+                    margin: 10px 0;
+                    font-size: 18px;
                 }}
                 .items-table {{
                     width: 100%;
                     border-collapse: collapse;
-                    margin: 10px 0;
+                    margin: 25px 0;
                 }}
                 .items-table th {{
                     background: #FF69B4;
                     color: white;
-                    padding: 5px;
-                    font-size: 9px;
+                    padding: 15px 8px;
+                    font-size: 20px;
                     text-align: left;
+                    font-weight: bold;
                 }}
                 .items-table td {{
-                    padding: 5px;
-                    border-bottom: 1px solid #EEE;
+                    padding: 12px 8px;
+                    border-bottom: 2px solid #EEE;
+                    font-size: 18px;
                 }}
                 .totals {{
-                    margin-top: 10px;
-                    padding-top: 10px;
-                    border-top: 2px solid #FF69B4;
+                    margin-top: 25px;
+                    padding-top: 20px;
+                    border-top: 4px solid #FF69B4;
                     text-align: right;
                 }}
                 .total-row {{
-                    margin: 5px 0;
-                    font-weight: bold;
+                    margin: 15px 0;
+                    font-size: 22px;
                 }}
                 .grand-total {{
-                    font-size: 14px;
+                    font-size: 32px;
                     color: #FF1493;
-                    margin-top: 10px;
+                    margin-top: 20px;
+                    font-weight: bold;
                 }}
                 .footer {{
-                    margin-top: 20px;
-                    padding-top: 10px;
-                    border-top: 1px dashed #CCC;
+                    margin-top: 35px;
+                    padding-top: 20px;
+                    border-top: 2px dashed #CCC;
                     text-align: center;
-                    font-size: 8px;
-                    color: #999;
+                    font-size: 16px;
+                    color: #888;
                 }}
                 .payment-details {{
-                    margin: 10px 0;
-                    padding: 8px;
+                    margin: 25px 0;
+                    padding: 18px;
                     background: #F0F8FF;
+                    border-radius: 10px;
+                    font-size: 18px;
                 }}
                 .thankyou {{
                     text-align: center;
-                    margin-top: 15px;
-                    font-size: 11px;
+                    margin-top: 30px;
+                    font-size: 24px;
                     font-weight: bold;
                     color: #FF1493;
+                }}
+                .item-name {{
+                    font-weight: bold;
+                    font-size: 20px;
+                }}
+                .item-brand {{
+                    font-size: 16px;
+                    color: #999;
+                    margin-top: 5px;
+                }}
+                strong {{
+                    font-size: 20px;
+                }}
+                .price-cell {{
+                    font-size: 20px;
+                    font-weight: bold;
+                }}
+                .qty-cell {{
+                    font-size: 22px;
+                    font-weight: bold;
+                    text-align: center;
                 }}
                 @media print {{
                     body {{
                         margin: 0;
-                        padding: 0;
+                        padding: 5px;
                     }}
                 }}
             </style>
         </head>
         <body>
-            <div class="header">
-                <div class="company-name">{company_data.get('company_name', 'Glamour Cosmetics')}</div>
-                <div class="company-details">
-                    {company_data.get('company_address', '')}<br>
-                    Tel: {company_data.get('company_phone', '')} | Email: {company_data.get('company_email', '')}<br>
-                    PIN: {company_data.get('kra_pin', '')}
+            <div class="container">
+                <div class="header">
+                    {logo_html}
+                    <div class="company-name">✨ {company_data.get('company_name', 'Glamour Cosmetics')} ✨</div>
+                    <div class="company-details">
+                        {company_data.get('company_address', '')}<br>
+                        📞 {company_data.get('company_phone', '')}<br>
+                        ✉️ {company_data.get('company_email', '')}<br>
+                        🔑 PIN: {company_data.get('kra_pin', '')}<br>
+                        🌐 {company_data.get('company_website', '')}
+                    </div>
                 </div>
-            </div>
-            
-            <div class="receipt-title">
-                {'TAX INVOICE' if sale_type == 'invoice' else 'PROFORMA INVOICE' if sale_type == 'proforma' else 'CONSIGNMENT NOTE'}
-            </div>
-            
-            <div class="info-section">
-                <div class="info-row"><strong>Invoice No:</strong> {sale_data['invoice_number']}</div>
-                <div class="info-row"><strong>Date:</strong> {sale_data['date']}</div>
-                <div class="info-row"><strong>Salesperson:</strong> {sale_data['salesperson']}</div>
-                <div class="info-row"><strong>Customer:</strong> {sale_data.get('customer_name', 'Walk-in Customer')}</div>
-                <div class="info-row"><strong>Phone:</strong> {sale_data.get('customer_phone', 'N/A')}</div>
-            </div>
-            
-            <table class="items-table">
-                <thead>
-                    <tr>
-                        <th>Item</th>
-                        <th>Qty</th>
-                        <th>Price</th>
-                        <th>Total</th>
-                    </tr>
-                </thead>
-                <tbody>
-        """
+                
+                <div class="receipt-title">
+                    {'🧾 TAX INVOICE' if sale_type == 'invoice' else '📄 PROFORMA INVOICE' if sale_type == 'proforma' else '📦 CONSIGNMENT NOTE'}
+                </div>
+                
+                <div class="info-section">
+                    <div class="info-row"><strong>📄 Document No:</strong> {sale_data['invoice_number']}</div>
+                    <div class="info-row"><strong>📅 Date:</strong> {sale_data['date']}</div>
+                    <div class="info-row"><strong>👤 Salesperson:</strong> {sale_data['salesperson']}</div>
+                    <div class="info-row"><strong>👤 Customer:</strong> {sale_data.get('customer_name', 'Walk-in Customer')}</div>
+                    <div class="info-row"><strong>📞 Phone:</strong> {sale_data.get('customer_phone', 'N/A')}</div>
+                </div>
+                
+                <table class="items-table">
+                    <thead>
+                        <tr>
+                            <th>Product</th>
+                            <th style="text-align: center;">Qty</th>
+                            <th style="text-align: right;">Price</th>
+                            <th style="text-align: right;">Total</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            """
         
         for item in cart_items:
             html += f"""
-                    <tr>
-                        <td>{item['name']}<br><small style="color:#999">{item.get('brand', '')}</small></td>
-                        <td>{item['quantity']}</td>
-                        <td>{item['price']:.2f}</td>
-                        <td>{item['total']:.2f}</td>
-                    </tr>
-            """
+                        <tr>
+                            <td>
+                                <div class="item-name">{item['name']}</div>
+                                <div class="item-brand">{item.get('brand', '')}</div>
+                            </td>
+                            <td style="text-align: center; font-size: 22px; font-weight: bold;">{item['quantity']}</td>
+                            <td style="text-align: right; font-size: 18px;">KES {item['price']:.2f}</td>
+                            <td style="text-align: right; font-size: 20px; font-weight: bold;">KES {item['total']:.2f}</td>
+                        </tr>
+                """
         
         html += """
-                </tbody>
-            </table>
+                    </tbody>
+                </table>
         """
         
         if sale_type == "invoice":
             html += f"""
-            <div class="totals">
-                <div class="total-row">Subtotal: KES {sale_data['subtotal']:.2f}</div>
-                <div class="total-row">VAT ({company_data.get('vat_rate', 16)}%): KES {sale_data['vat_amount']:.2f}</div>
-                <div class="grand-total"><strong>TOTAL: KES {sale_data['total']:.2f}</strong></div>
-            </div>
-            
-            <div class="payment-details">
-                <strong>Payment Details:</strong><br>
-                Method: {sale_data.get('payment_method', 'Cash')}<br>
-                Amount Paid: KES {sale_data.get('amount_paid', 0):.2f}<br>
-                Change: KES {sale_data.get('change', 0):.2f}
-            </div>
+                <div class="totals">
+                    <div class="total-row"><strong>Subtotal:</strong> KES {sale_data['subtotal']:.2f}</div>
+                    <div class="total-row"><strong>VAT ({company_data.get('vat_rate', 16)}%):</strong> KES {sale_data['vat_amount']:.2f}</div>
+                    <div class="grand-total"><strong>TOTAL: KES {sale_data['total']:.2f}</strong></div>
+                </div>
+                
+                <div class="payment-details">
+                    <strong>💳 PAYMENT DETAILS</strong><br>
+                    <strong>Method:</strong> {sale_data.get('payment_method', 'Cash')}<br>
+                    <strong>Amount Paid:</strong> KES {sale_data.get('amount_paid', 0):.2f}<br>
+                    <strong>Change:</strong> KES {sale_data.get('change', 0):.2f}
+                </div>
             """
         else:
             html += f"""
-            <div class="totals">
-                <div class="grand-total"><strong>TOTAL AMOUNT: KES {sale_data['total']:.2f}</strong></div>
-                <div style="font-size: 9px; color: #FF0000; margin-top: 5px;">
-                    * This is a {'proforma invoice' if sale_type == 'proforma' else 'consignment note'} - No tax applied
+                <div class="totals">
+                    <div class="grand-total"><strong>TOTAL AMOUNT: KES {sale_data['total']:.2f}</strong></div>
+                    <div style="font-size: 18px; color: #FF0000; margin-top: 15px; text-align: center; padding: 15px; background: #FFF3CD; border-radius: 8px;">
+                        ⚠️ This is a {'proforma invoice' if sale_type == 'proforma' else 'consignment note'}<br>
+                        No tax applied
+                    </div>
                 </div>
-            </div>
             """
         
         html += f"""
-            <div class="footer">
-                {company_data.get('receipt_footer', 'Thank you for shopping with us!')}<br>
-                {company_data.get('company_website', '')}
-            </div>
-            
-            <div class="thankyou">
-                ✨ Thank you for choosing Glamour Cosmetics! ✨
+                <div class="footer">
+                    {company_data.get('receipt_footer', 'Thank you for shopping with us!')}<br>
+                    <span style="font-size: 14px;">{company_data.get('company_website', '')}</span>
+                </div>
+                
+                <div class="thankyou">
+                    ✨ THANK YOU! ✨<br>
+                    <span style="font-size: 16px;">We appreciate your business</span>
+                </div>
             </div>
         </body>
         </html>
@@ -561,16 +640,164 @@ class ReceiptPrinter:
     
     @staticmethod
     def print_receipt(html_content):
-        """Print receipt using QTextDocument"""
-        printer = QPrinter(QPrinter.HighResolution)
-        printer.setPaperSize(QPrinter.RollPaper)
-        printer.setPageMargins(5, 5, 5, 5, QPrinter.Millimeter)
+        """Print receipt using QTextDocument with proper scaling"""
+        try:
+            printer = QPrinter(QPrinter.HighResolution)
+            
+            # Set paper size for thermal receipt printer
+            printer.setPageSize(QPrinter.A4)
+            printer.setPageMargins(8, 8, 8, 8, QPrinter.Millimeter)
+            
+            # Create print dialog
+            dialog = QPrintDialog(printer)
+            
+            if dialog.exec_() == QPrintDialog.Accepted:
+                # Create a QTextDocument and set HTML
+                doc = QTextDocument()
+                doc.setHtml(html_content)
+                
+                # Set a very large default font for the document
+                from PyQt5.QtGui import QFont
+                default_font = QFont("Arial", 14)
+                doc.setDefaultFont(default_font)
+                
+                # Print
+                doc.print_(printer)
+                return True
+        except Exception as e:
+            print(f"Printing error: {e}")
+            return False
+
+# Now replace the process_sale method in the SalesDialog class with this corrected version
+
+# Find the SalesDialog class and replace its process_sale method with this:
+
+    def process_sale(self):
+        if not self.cart_items:
+            QMessageBox.warning(self, "Error", "No items in cart!")
+            return
         
-        dialog = QPrintDialog(printer)
-        if dialog.exec_() == QPrintDialog.Accepted:
-            doc = QTextDocument()
-            doc.setHtml(html_content)
-            doc.print_(printer)
+        total_text = self.total_label.text().replace("KES ", "").replace(",", "")
+        total = float(total_text)
+        
+        if self.sale_type == "invoice":
+            paid = self.amount_paid.value()
+            if paid < total:
+                QMessageBox.warning(self, "Error", f"Insufficient payment! Amount short by KES {total - paid:.2f}")
+                return
+        
+        conn = None
+        try:
+            conn = self.db_manager.get_connection()
+            cursor = conn.cursor()
+            
+            # Generate invoice number
+            prefix = {
+                "invoice": "INV",
+                "proforma": "PRO",
+                "consignment": "CON"
+            }[self.sale_type]
+            
+            cursor.execute("SELECT COUNT(*) FROM sales")
+            count = cursor.fetchone()[0] + 1
+            invoice_number = f"{prefix}{datetime.now().strftime('%Y%m%d')}{count:04d}"
+            
+            # Calculate amounts
+            subtotal = sum(item['total'] for item in self.cart_items)
+            
+            if self.sale_type == "invoice":
+                vat = subtotal * (self.vat_rate / (100 + self.vat_rate))
+                total_amount = subtotal
+            else:
+                vat = 0
+                total_amount = subtotal
+            
+            # Insert sale
+            cursor.execute("""
+                INSERT INTO sales 
+                (invoice_number, sale_type, customer_name, customer_phone, customer_address,
+                 subtotal, vat_amount, total_amount, payment_status, payment_method, user_id)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """, (
+                invoice_number, self.sale_type,
+                self.customer_name.text(), self.customer_phone.text(), self.customer_address.toPlainText(),
+                subtotal, vat, total_amount,
+                "completed" if self.sale_type == "invoice" else "pending",
+                self.payment_method.currentText() if self.sale_type == "invoice" else None,
+                self.user_data['id']
+            ))
+            
+            sale_id = cursor.lastrowid
+            
+            # Insert sale items and update stock (only for invoices)
+            for item in self.cart_items:
+                cursor.execute("""
+                    INSERT INTO sale_items (sale_id, item_id, quantity, unit_price, total_price)
+                    VALUES (?, ?, ?, ?, ?)
+                """, (sale_id, item['id'], item['quantity'], item['price'], item['total']))
+                
+                # Update stock only for actual sales (invoices)
+                if self.sale_type == "invoice":
+                    cursor.execute("""
+                        UPDATE items SET stock_quantity = stock_quantity - ?
+                        WHERE id = ?
+                    """, (item['quantity'], item['id']))
+            
+            conn.commit()
+            
+            # Get company settings for receipt
+            cursor.execute("SELECT * FROM company_settings LIMIT 1")
+            company = cursor.fetchone()
+            company_data = {
+                'company_name': company[1] if company else "Glamour Cosmetics",
+                'company_address': company[2] if company else "",
+                'company_phone': company[3] if company else "",
+                'company_email': company[4] if company else "",
+                'company_website': company[5] if company else "",
+                'kra_pin': company[6] if company else "",
+                'vat_rate': company[7] if company else 16,
+                'receipt_footer': company[11] if company and len(company) > 11 else ""
+            }
+            
+            # Prepare sale data for receipt
+            sale_data = {
+                'invoice_number': invoice_number,
+                'date': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+                'salesperson': self.user_data['username'],
+                'customer_name': self.customer_name.text(),
+                'customer_phone': self.customer_phone.text(),
+                'subtotal': subtotal,
+                'vat_amount': vat,
+                'total': total_amount,
+                'payment_method': self.payment_method.currentText() if self.sale_type == "invoice" else None,
+                'amount_paid': self.amount_paid.value() if self.sale_type == "invoice" else total_amount,
+                'change': (self.amount_paid.value() - total_amount) if self.sale_type == "invoice" else 0
+            }
+            
+            # Close connection before printing
+            conn.close()
+            conn = None
+            
+            # Generate and print receipt
+            html_receipt = ReceiptPrinter.generate_html_receipt(sale_data, company_data, self.cart_items, self.sale_type)
+            ReceiptPrinter.print_receipt(html_receipt)
+            
+            QMessageBox.information(self, "Success", 
+                f"{self.sale_type.title()} completed successfully!\n\n"
+                f"Document Number: {invoice_number}\n"
+                f"Total Amount: KES {total_amount:,.2f}\n\n"
+                f"A receipt has been sent to the printer.")
+            
+            self.accept()
+            
+        except Exception as e:
+            if conn:
+                try:
+                    conn.rollback()
+                    conn.close()
+                except:
+                    pass
+            QMessageBox.critical(self, "Error", f"Failed to process sale: {str(e)}")
 
 class MainWindow(QMainWindow):
     def __init__(self, db_manager, user_data):
@@ -946,6 +1173,8 @@ class MainWindow(QMainWindow):
         
         return widget
     
+   
+
     def create_settings_tab(self):
         widget = QWidget()
         layout = QVBoxLayout()
@@ -956,57 +1185,83 @@ class MainWindow(QMainWindow):
         form_layout = QFormLayout(scroll_widget)
         
         self.company_name = QLineEdit()
+        self.company_name.setPlaceholderText("Company Name")
         form_layout.addRow("🏢 Company Name:", self.company_name)
         
         self.company_address = QTextEdit()
         self.company_address.setMaximumHeight(80)
+        self.company_address.setPlaceholderText("Street, City, Country")
         form_layout.addRow("📍 Address:", self.company_address)
         
         self.company_phone = QLineEdit()
+        self.company_phone.setPlaceholderText("+254 700 000 000")
         form_layout.addRow("📞 Phone:", self.company_phone)
         
         self.company_email = QLineEdit()
+        self.company_email.setPlaceholderText("info@company.com")
         form_layout.addRow("📧 Email:", self.company_email)
         
         self.company_website = QLineEdit()
+        self.company_website.setPlaceholderText("www.company.com")
         form_layout.addRow("🌐 Website:", self.company_website)
         
         self.kra_pin = QLineEdit()
+        self.kra_pin.setPlaceholderText("P051234567V")
         form_layout.addRow("🔑 KRA PIN:", self.kra_pin)
         
         self.vat_rate = QDoubleSpinBox()
         self.vat_rate.setRange(0, 100)
         self.vat_rate.setSuffix("%")
+        self.vat_rate.setValue(16)
         form_layout.addRow("💰 VAT Rate:", self.vat_rate)
         
         self.invoice_prefix = QLineEdit()
+        self.invoice_prefix.setText("INV")
         form_layout.addRow("📄 Invoice Prefix:", self.invoice_prefix)
         
         self.receipt_prefix = QLineEdit()
+        self.receipt_prefix.setText("RCP")
         form_layout.addRow("🧾 Receipt Prefix:", self.receipt_prefix)
         
         self.receipt_footer = QTextEdit()
-        self.receipt_footer.setMaximumHeight(100)
+        self.receipt_footer.setMaximumHeight(80)
+        self.receipt_footer.setPlaceholderText("Thank you for shopping with us!")
         form_layout.addRow("📝 Receipt Footer:", self.receipt_footer)
         
         layout.addWidget(scroll_area)
         scroll_area.setWidget(scroll_widget)
         
         # Logo selection
-        logo_layout = QHBoxLayout()
-        logo_layout.addWidget(QLabel("🖼️ Company Logo:"))
+        logo_group = QGroupBox("Company Logo")
+        logo_group.setStyleSheet("QGroupBox { font-weight: bold; }")
+        logo_layout = QVBoxLayout()
+        
+        logo_file_layout = QHBoxLayout()
         self.logo_path = QLineEdit()
-        logo_layout.addWidget(self.logo_path)
+        self.logo_path.setPlaceholderText("Select logo image file...")
+        logo_file_layout.addWidget(self.logo_path)
         
-        browse_logo_btn = QPushButton("Browse")
+        browse_logo_btn = QPushButton("📁 Browse")
         browse_logo_btn.clicked.connect(self.browse_logo)
-        logo_layout.addWidget(browse_logo_btn)
+        logo_file_layout.addWidget(browse_logo_btn)
         
-        layout.addLayout(logo_layout)
+        logo_layout.addLayout(logo_file_layout)
+        
+        # Logo preview
+        self.logo_preview = QLabel()
+        self.logo_preview.setFixedSize(150, 80)
+        self.logo_preview.setStyleSheet("border: 1px solid #ccc; background: white;")
+        self.logo_preview.setAlignment(Qt.AlignCenter)
+        self.logo_preview.setText("No logo selected")
+        logo_layout.addWidget(self.logo_preview, alignment=Qt.AlignCenter)
+        
+        logo_group.setLayout(logo_layout)
+        layout.addWidget(logo_group)
         
         # Save settings button
         save_settings_btn = QPushButton("💾 Save Settings")
         save_settings_btn.clicked.connect(self.save_settings)
+        save_settings_btn.setStyleSheet("background-color: #4CAF50; font-size: 14px; padding: 10px;")
         layout.addWidget(save_settings_btn)
         
         layout.addStretch()
@@ -1017,7 +1272,9 @@ class MainWindow(QMainWindow):
         self.load_settings()
         
         return widget
-    
+
+
+
     def load_inventory(self):
         conn = self.db_manager.get_connection()
         cursor = conn.cursor()
@@ -1158,6 +1415,14 @@ class MainWindow(QMainWindow):
             self.invoice_prefix.setText(settings[9] or "INV")
             self.receipt_prefix.setText(settings[10] or "RCP")
             self.receipt_footer.setText(settings[11] or "")
+            
+            # Load logo preview
+            if settings[8] and os.path.exists(settings[8]):
+                pixmap = QPixmap(settings[8])
+                if not pixmap.isNull():
+                    scaled_pixmap = pixmap.scaled(150, 80, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+                    self.logo_preview.setPixmap(scaled_pixmap)
+                    self.logo_preview.setText("")
     
     def load_categories_combo(self, combo_box):
         conn = self.db_manager.get_connection()
@@ -1373,38 +1638,56 @@ class MainWindow(QMainWindow):
     
     def browse_logo(self):
         file_path, _ = QFileDialog.getOpenFileName(self, "Select Logo", "", 
-                                                  "Image Files (*.png *.jpg *.jpeg *.bmp)")
+                                                  "Image Files (*.png *.jpg *.jpeg *.bmp *.gif)")
         if file_path:
             self.logo_path.setText(file_path)
+            # Load and show preview
+            pixmap = QPixmap(file_path)
+            if not pixmap.isNull():
+                scaled_pixmap = pixmap.scaled(150, 80, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+                self.logo_preview.setPixmap(scaled_pixmap)
+                self.logo_preview.setText("")
+            else:
+                self.logo_preview.setText("Invalid image file")
     
     def save_settings(self):
-        conn = self.db_manager.get_connection()
-        cursor = conn.cursor()
-        
-        cursor.execute("""
-            UPDATE company_settings SET
-                company_name = ?, company_address = ?, company_phone = ?,
-                company_email = ?, company_website = ?, kra_pin = ?, vat_rate = ?,
-                logo_path = ?, invoice_prefix = ?, receipt_prefix = ?, receipt_footer = ?
-            WHERE id = 1
-        """, (
-            self.company_name.text(),
-            self.company_address.toPlainText(),
-            self.company_phone.text(),
-            self.company_email.text(),
-            self.company_website.text(),
-            self.kra_pin.text(),
-            self.vat_rate.value(),
-            self.logo_path.text(),
-            self.invoice_prefix.text(),
-            self.receipt_prefix.text(),
-            self.receipt_footer.toPlainText()
-        ))
-        
-        conn.commit()
-        conn.close()
-        
-        QMessageBox.information(self, "Success", "Settings saved successfully")
+        try:
+            conn = self.db_manager.get_connection()
+            cursor = conn.cursor()
+            
+            cursor.execute("""
+                UPDATE OR INSERT INTO company_settings 
+                (id, company_name, company_address, company_phone, company_email, 
+                 company_website, kra_pin, vat_rate, logo_path, invoice_prefix, 
+                 receipt_prefix, receipt_footer)
+                VALUES (1, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """, (
+                self.company_name.text(),
+                self.company_address.toPlainText(),
+                self.company_phone.text(),
+                self.company_email.text(),
+                self.company_website.text(),
+                self.kra_pin.text(),
+                self.vat_rate.value(),
+                self.logo_path.text(),
+                self.invoice_prefix.text(),
+                self.receipt_prefix.text(),
+                self.receipt_footer.toPlainText()
+            ))
+            
+            conn.commit()
+            conn.close()
+            
+            # Test if logo exists
+            if self.logo_path.text() and os.path.exists(self.logo_path.text()):
+                QMessageBox.information(self, "Success", "Settings saved successfully!\nLogo file found and will appear on receipts.")
+            elif self.logo_path.text():
+                QMessageBox.warning(self, "Warning", f"Settings saved but logo file not found at:\n{self.logo_path.text()}")
+            else:
+                QMessageBox.information(self, "Success", "Settings saved successfully!")
+                
+        except Exception as e:
+            QMessageBox.critical(self, "Error", f"Failed to save settings: {str(e)}")
     
     def generate_sales_report(self):
         from_date = self.date_from.date().toString("yyyy-MM-dd")
@@ -1757,33 +2040,36 @@ Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
         from_date = self.date_from.date().toString("yyyy-MM-dd")
         to_date = self.date_to.date().toString("yyyy-MM-dd")
         
-        conn = self.db_manager.get_connection()
-        cursor = conn.cursor()
-        
-        # Get profit data
-        cursor.execute("""
-            SELECT i.name, i.brand, i.cost_price, i.selling_price, 
-                   SUM(si.quantity) as total_sold,
-                   (i.selling_price - i.cost_price) * SUM(si.quantity) as total_profit
-            FROM sale_items si
-            JOIN items i ON si.item_id = i.id
-            JOIN sales s ON si.sale_id = s.id
-            WHERE DATE(s.created_at) BETWEEN ? AND ?
-            GROUP BY i.id
-            ORDER BY total_profit DESC
-        """, (from_date, to_date))
-        
-        profit_items = cursor.fetchall()
-        
-        # Overall totals
-        total_revenue = sum(item[4] * item[3] for item in profit_items)
-        total_cost = sum(item[4] * item[2] for item in profit_items)
-        total_profit = total_revenue - total_cost
-        profit_margin = (total_profit / total_revenue * 100) if total_revenue > 0 else 0
-        
-        conn.close()
-        
-        report = f"""
+        conn = None
+        try:
+            conn = self.db_manager.get_connection()
+            cursor = conn.cursor()
+            
+            # Get profit data
+            cursor.execute("""
+                SELECT i.name, i.brand, i.cost_price, i.selling_price, 
+                       SUM(si.quantity) as total_sold,
+                       (i.selling_price - i.cost_price) * SUM(si.quantity) as total_profit
+                FROM sale_items si
+                JOIN items i ON si.item_id = i.id
+                JOIN sales s ON si.sale_id = s.id
+                WHERE DATE(s.created_at) BETWEEN ? AND ?
+                GROUP BY i.id
+                ORDER BY total_profit DESC
+            """, (from_date, to_date))
+            
+            profit_items = cursor.fetchall()
+            
+            # Overall totals
+            total_revenue = sum(item[4] * item[3] for item in profit_items)
+            total_cost = sum(item[4] * item[2] for item in profit_items)
+            total_profit = total_revenue - total_cost
+            profit_margin = (total_profit / total_revenue * 100) if total_revenue > 0 else 0
+            
+            conn.close()
+            conn = None
+            
+            report = f"""
 ╔══════════════════════════════════════════════════════════════════════════════╗
 ║                             PROFIT & LOSS REPORT                              ║
 ║                     {from_date}  to  {to_date}                                  ║
@@ -1802,34 +2088,35 @@ Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
 │                         PROFIT BY PRODUCT CATEGORY                            │
 ├──────────────────────────────────────────────────────────────────────────────┤
 """
-        
-        # Group by category
-        category_profit = {}
-        for item in profit_items:
-            cursor = conn.cursor()
-            cursor.execute("SELECT name FROM categories WHERE id = (SELECT category_id FROM items WHERE name = ?)", (item[0],))
-            cat = cursor.fetchone()
-            cat_name = cat[0] if cat else "Uncategorized"
-            category_profit[cat_name] = category_profit.get(cat_name, 0) + item[5]
-        
-        for cat, profit in sorted(category_profit.items(), key=lambda x: x[1], reverse=True):
-            report += f"│ {cat:<30} KES {profit:>12,.2f}│\n"
-        
-        report += f"""
+            
+            # Group by category
+            category_profit = {}
+            for item in profit_items:
+                cat_cursor = self.db_manager.get_connection().cursor()
+                cat_cursor.execute("SELECT name FROM categories WHERE id = (SELECT category_id FROM items WHERE name = ?)", (item[0],))
+                cat = cat_cursor.fetchone()
+                cat_cursor.close()
+                cat_name = cat[0] if cat else "Uncategorized"
+                category_profit[cat_name] = category_profit.get(cat_name, 0) + item[5]
+            
+            for cat, profit in sorted(category_profit.items(), key=lambda x: x[1], reverse=True):
+                report += f"│ {cat:<30} KES {profit:>12,.2f}│\n"
+            
+            report += f"""
 └──────────────────────────────────────────────────────────────────────────────┘
 
 ┌──────────────────────────────────────────────────────────────────────────────┐
 │                      TOP 10 MOST PROFITABLE PRODUCTS                          │
 ├──────────────────────────────────────────────────────────────────────────────┤
 """
-        
-        for idx, item in enumerate(profit_items[:10], 1):
-            unit_profit = item[3] - item[2]
-            report += f"│ {idx:2}. {item[0]} ({item[1]})                                     │\n"
-            report += f"│    Sold: {item[4]} units | Unit Profit: KES {unit_profit:.2f}               │\n"
-            report += f"│    Total Profit: KES {item[5]:>12,.2f}                                │\n"
-        
-        report += """
+            
+            for idx, item in enumerate(profit_items[:10], 1):
+                unit_profit = item[3] - item[2]
+                report += f"│ {idx:2}. {item[0]} ({item[1]})                                     │\n"
+                report += f"│    Sold: {item[4]} units | Unit Profit: KES {unit_profit:.2f}               │\n"
+                report += f"│    Total Profit: KES {item[5]:>12,.2f}                                │\n"
+            
+            report += """
 └──────────────────────────────────────────────────────────────────────────────┘
 
 📊 RECOMMENDATIONS:
@@ -1838,8 +2125,13 @@ Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
 • Review pricing strategy for bestsellers
 • Negotiate better cost prices from suppliers
 """
-        
-        self.report_display.setText(report)
+            
+            self.report_display.setText(report)
+            
+        except Exception as e:
+            QMessageBox.critical(self, "Error", f"Failed to generate profit report: {str(e)}")
+            if conn:
+                conn.close()
     
     def export_to_excel(self):
         file_path, _ = QFileDialog.getSaveFileName(self, "Export to Excel", 
